@@ -10,7 +10,7 @@
 import UIKit
 import AssetsLibrary
 import Photos
-import KingFisher
+import Kingfisher
 
 let MEDIA_LOADING_DID_END_NOTIFICATION  = "MEDIA_LOADING_DID_END_NOTIFICATION"
 let MEDIA_PROGRESS_NOTIFICATION  = "MEDIA_PROGRESS_NOTIFICATION"

@@ -37,6 +37,7 @@ MediaBrowser can display one or more images or videos by providing either UIImag
   s.weak_frameworks = 'Photos'
 
   s.dependency 'SDWebImage'
+  s.dependency 'Kingfisher'
   s.dependency 'UICircularProgressRing'
   s.pod_target_xcconfig = { 'SWIFT_VERSION' => '5.0' }
   s.requires_arc = true

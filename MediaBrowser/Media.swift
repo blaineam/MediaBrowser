@@ -10,7 +10,7 @@
 import UIKit
 import AssetsLibrary
 import Photos
-import SDWebImage
+import KingFisher
 
 let MEDIA_LOADING_DID_END_NOTIFICATION  = "MEDIA_LOADING_DID_END_NOTIFICATION"
 let MEDIA_PROGRESS_NOTIFICATION  = "MEDIA_PROGRESS_NOTIFICATION"
@@ -41,7 +41,7 @@ open class Media: NSObject {
     private var assetTargetSize = CGSize.zero
     
     private var loadingInProgress = false
-    private var operation: SDWebImageOperation?
+    private var operation: DownloadTask?
     private var assetRequestID = PHInvalidImageRequestID
     
     //MARK: - Init
@@ -191,27 +191,35 @@ open class Media: NSObject {
 
     // Load from local file
     private func performLoadUnderlyingImageAndNotifyWithWebURL(url: URL) {
-        operation = SDWebImageManager.shared().loadImage(with: url, options: [], progress: { (receivedSize, expectedSize, targetURL) in
-            let dict = [
-            "progress" : min(1.0, CGFloat(receivedSize)/CGFloat(expectedSize)),
-            "photo" : self
-            ] as [String : Any]
-            
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: MEDIA_PROGRESS_NOTIFICATION), object: dict)
-            
-        }) { [weak self] (image, _, error, cacheType, finish, imageUrl) in
-            guard let wself = self else { return }
-            
-            DispatchQueue.main.async {
-                if let _image = image {
-                    wself.underlyingImage = _image
+        //implement KingFisher
+       operation = KingfisherManager.shared.retrieveImage(with: url) { result in
+            // Do something with `result`
+            switch result {
+            case .success(let value):
+                //print(value.image)
+                if let image = value.image {
+                    let dict = [
+                        "progress" : 1.0,
+                        "photo" : self
+                        ] as [String : Any]
+                    
+                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: MEDIA_PROGRESS_NOTIFICATION), object: dict)
+                    guard let wself = self else { return }
+                    
+                    DispatchQueue.main.async {
+                            wself.underlyingImage = _image
+                        
+                        DispatchQueue.main.async() {
+                            wself.imageLoadingComplete()
+                        }
+                    }
                 }
                 
-                DispatchQueue.main.async() {
-                    wself.imageLoadingComplete()
-                }
+            case .failure(let error):
+                print(error)
             }
         }
+        
     }
     
     // Load from local file

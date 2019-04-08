@@ -18,31 +18,31 @@ func floorcgf(x: CGFloat) -> CGFloat {
 /// MediaBrwoser is based in UIViewController, UIScrollViewDelegate and UIActionSheetDelegate. So you can push, or make modal.
 @objcMembers public class MediaBrowser: UIViewController, AVPlayerViewControllerDelegate {
     internal let padding = CGFloat(0.0)
-
+    
     // Data
     internal var mediaCount = -1
     internal var mediaArray = [Media?]()
     internal var thumbMedias = [Media?]()
     /// Provided via init
-	internal var fixedMediasArray: [Media]?
-	
-	// Views
-	internal var pagingScrollView = UIScrollView()
-	
-	// Paging & layout
-	internal var visiblePages = Set<MediaZoomingScrollView>()
+    internal var fixedMediasArray: [Media]?
+    
+    // Views
+    internal var pagingScrollView = UIScrollView()
+    
+    // Paging & layout
+    internal var visiblePages = Set<MediaZoomingScrollView>()
     internal var recycledPages = Set<MediaZoomingScrollView>()
-	internal var currentPageIndex = 0
+    internal var currentPageIndex = 0
     internal var previousPageIndex = Int.max
     internal var previousLayoutBounds = CGRect.zero
-	internal var pageIndexBeforeRotation = 0
-	
-	// Navigation & controls
-	internal var toolbar = UIToolbar()
-	internal var controlVisibilityTimer: Timer?
-	internal var previousButton: UIBarButtonItem?
+    internal var pageIndexBeforeRotation = 0
+    
+    // Navigation & controls
+    internal var toolbar = UIToolbar()
+    internal var controlVisibilityTimer: Timer?
+    internal var previousButton: UIBarButtonItem?
     internal var nextButton: UIBarButtonItem?
-    internal var actionButton: UIBarButtonItem?
+    public var actionButton: UIBarButtonItem?
     internal var doneButton: UIBarButtonItem?
     
     // Grid
@@ -59,7 +59,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
     internal var previousNavigationBarTintColor: UIColor?
     internal var previousViewControllerBackButton: UIBarButtonItem?
     internal var previousStatusBarStyle: UIStatusBarStyle = .lightContent
-
+    
     // Video
     lazy internal var currentVideoPlayerViewController: AVPlayerViewController = {
         if #available(iOS 9.0, *) {
@@ -69,12 +69,12 @@ func floorcgf(x: CGFloat) -> CGFloat {
     }(AVPlayerViewController())
     internal var currentVideoIndex = 0
     internal var currentVideoLoadingIndicator: UIActivityIndicatorView?
-
+    
     var activityViewController: UIActivityViewController?
-
+    
     /// Paging Scroll View Background Color for MediaBrowser
     public var scrollViewBackgroundColor = UIColor.black
-
+    
     /// UINavigationBar Translucent for MediaBrowser
     public var navigationBarTranslucent = true
     
@@ -86,10 +86,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
     
     /// UINavigationBar Tint Color for MediaBrowser
     public var navigationBarTintColor = UIColor.black.withAlphaComponent(0.5)
-
+    
     /// UINavigationBar Style for MediaBrowser
     public var navigationBarStyle = UIBarStyle.black
-
+    
     /// UIStatusBarStyle for MediaBrowser
     public var statusBarStyle: UIStatusBarStyle = .lightContent
     
@@ -118,10 +118,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
     public var leaveStatusBarAlone = false
     
     /// Perform layout
-	public var performingLayout = false
+    public var performingLayout = false
     
     /// Support rotating
-	public var rotating = false
+    public var rotating = false
     
     /// Active as in it's in the view heirarchy
     public var viewIsActive = false
@@ -161,7 +161,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
     
     /// Start on Grid
     public var startOnGrid = false
-
+    
     /// If you observe flashes to the screen when you move between the grid
     /// and the photos, set this to true to disable the transition animations.
     public var disableGridAnimations = false
@@ -217,6 +217,47 @@ func floorcgf(x: CGFloat) -> CGFloat {
     /// Caching image count both side (e.g. when index 1, caching 0 and 2)
     public var cachingImageCount = 1
     
+    
+    public func toggleActionButton(direction:Bool) -> Void {
+        
+        
+        DispatchQueue.main.async {
+            if(direction) {
+                self.actionButton = UIBarButtonItem(
+                    barButtonSystemItem: UIBarButtonItem.SystemItem.play,
+                    target: self,
+                    action: #selector(self.actionButtonPressed(_:)))
+            } else {
+                self.actionButton = UIBarButtonItem(
+                    barButtonSystemItem: UIBarButtonItem.SystemItem.pause,
+                    target: self,
+                    action: #selector(self.actionButtonPressed(_:)))
+            }
+            
+            // Toolbar items
+            let fixedSpace = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: self, action: nil)
+            fixedSpace.width = 32.0 // To balance action button
+            let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: self, action: nil)
+            var items = [UIBarButtonItem]()
+            
+            items.append(UIBarButtonItem(
+                image: UIImage.imageForResourcePath(name: "UIBarButtonItemGrid", inBundle: Bundle(for: MediaBrowser.self)),
+                style: .plain,
+                target: self,
+                action: #selector(MediaBrowser.showGridAnimated)))
+            
+            items.append(flexSpace)
+            
+            // Right - Action
+            items.append(self.actionButton!)
+            
+            // Toolbar visibility
+            self.toolbar.setItems(items, animated: false)
+        }
+        
+    }
+    
+    
     /// Caching before MediaBrowser comes up, set
     public var preCachingEnabled = false {
         didSet {
@@ -225,15 +266,18 @@ func floorcgf(x: CGFloat) -> CGFloat {
             }
         }
     }
-
+    
+    
+    
+    
     /**
      Placeholder image
      - image: placeholder image
      - isAppliedForAll: This is indicated whether the placeholder will be showed for all image page or cell.
-                         If you want to use the placeholder image only for one special image page or cell, you should set the **currentIndex** variable.
+     If you want to use the placeholder image only for one special image page or cell, you should set the **currentIndex** variable.
      */
     public var placeholderImage: (image: UIImage, isAppliedForAll: Bool)?
-
+    
     //MARK: - Init
     
     /**
@@ -256,7 +300,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         self.init()
         self.delegate = delegate
     }
-
+    
     /**
      init with media
      
@@ -266,7 +310,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         self.init()
         fixedMediasArray = media
     }
-
+    
     /**
      init with coder
      
@@ -280,7 +324,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
     private func initialisation() {
         // Defaults
         if let vcBasedStatusBarAppearance = Bundle.main.object(forInfoDictionaryKey: "UIViewControllerBasedStatusBarAppearance") as? Bool {
-           isVCBasedStatusBarAppearance = vcBasedStatusBarAppearance
+            isVCBasedStatusBarAppearance = vcBasedStatusBarAppearance
         } else {
             isVCBasedStatusBarAppearance = true
         }
@@ -288,8 +332,8 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         hidesBottomBarWhenPushed = true
         automaticallyAdjustsScrollViewInsets = false
-//        extendedLayoutIncludesOpaqueBars = true
-//        navigationController?.view.backgroundColor = UIColor.white
+        //        extendedLayoutIncludesOpaqueBars = true
+        //        navigationController?.view.backgroundColor = UIColor.white
         
         // Listen for Media falsetifications
         NotificationCenter.default.addObserver(
@@ -298,15 +342,15 @@ func floorcgf(x: CGFloat) -> CGFloat {
             name: NSNotification.Name(rawValue: MEDIA_LOADING_DID_END_NOTIFICATION),
             object: nil)
     }
-
+    
     deinit {
         clearCurrentVideo()
         pagingScrollView.delegate = nil
         NotificationCenter.default.removeObserver(self)
         releaseAllUnderlyingPhotos(preserveCurrent: false)
-        SDImageCache.shared.clearMemory() // clear memory
+        SDImageCache.shared().clearMemory() // clear memory
     }
-
+    
     private func releaseAllUnderlyingPhotos(preserveCurrent: Bool) {
         // Create a copy in case this array is modified while we are looping through
         // Release photos
@@ -340,9 +384,9 @@ func floorcgf(x: CGFloat) -> CGFloat {
         // Releases the view if it doesn't have a superview.
         super.didReceiveMemoryWarning()
     }
-
+    
     //MARK: - View Loading
-
+    
     /// Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
     open override func viewDidLoad() {
         // Validate grid settings
@@ -350,10 +394,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
             enableGrid = true
         }
         
-//        if enableGrid {
-//            enableGrid = delegate?.thumbPhotoAtIndex(index: <#T##Int#>, MediaBrowser: <#T##MediaBrowser#>)
-////            enableGrid = [delegate respondsToSelector:Selector("MediaBrowser:thumbPhotoAtIndex:)]
-//        }
+        //        if enableGrid {
+        //            enableGrid = delegate?.thumbPhotoAtIndex(index: <#T##Int#>, MediaBrowser: <#T##MediaBrowser#>)
+        ////            enableGrid = [delegate respondsToSelector:Selector("MediaBrowser:thumbPhotoAtIndex:)]
+        //        }
         
         if !enableGrid {
             startOnGrid = false
@@ -383,8 +427,8 @@ func floorcgf(x: CGFloat) -> CGFloat {
         toolbar.barStyle = .blackTranslucent
         toolbar.isTranslucent = true
         toolbar.autoresizingMask = [.flexibleTopMargin, .flexibleWidth]
-
-
+        
+        
         // Toolbar Items
         if displayMediaNavigationArrows {
             let arrowPathFormat = "UIBarButtonItemArrow"
@@ -411,10 +455,16 @@ func floorcgf(x: CGFloat) -> CGFloat {
         }
         
         if displayActionButton {
-            actionButton = UIBarButtonItem(
-                barButtonSystemItem: UIBarButtonItem.SystemItem.action,
-                target: self,
-                action: #selector(actionButtonPressed(_:)))
+            if actionButton == nil {
+                actionButton = UIBarButtonItem(
+                    barButtonSystemItem: UIBarButtonItem.SystemItem.play,
+                    target: self,
+                    action: #selector(actionButtonPressed(_:)))
+            } else {
+                actionButton?.target = self
+                actionButton?.action = #selector(actionButtonPressed(_:))
+            }
+            
         }
         
         reloadData()
@@ -435,26 +485,26 @@ func floorcgf(x: CGFloat) -> CGFloat {
      - Parameter coordinator: UIViewControllerTransitionCoordinator
      */
     open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-
+        
         // Remember page index before rotation
         pageIndexBeforeRotation = currentPageIndex
         rotating = true
-
+        
         // In iOS 7 the nav bar gets shown after rotation, but might as well do this for everything!
         if areControlsHidden {
             // Force hidden
             navigationController?.isNavigationBarHidden = true
         }
-
+        
         coordinator.animate(alongsideTransition: { (context) in
             self.toolbar.frame = self.frameForToolbar
-
+            
             // Perform layout
             self.currentPageIndex = self.pageIndexBeforeRotation
-
+            
             // Delay control holding
             self.hideControlsAfterDelay()
-
+            
             // Layout
             self.layoutVisiblePages()
         }) { (context) in
@@ -486,7 +536,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
                     style: .done,
                     target: self,
                     action: #selector(doneButtonPressed))
-
+                
                 // Set appearance
                 if let done = doneButton {
                     done.setBackgroundImage(nil, for: .normal, barMetrics: .default)
@@ -506,15 +556,15 @@ func floorcgf(x: CGFloat) -> CGFloat {
                     // Appearance
                     newBackButton.setBackButtonBackgroundImage(nil, for: .normal, barMetrics: .default)
                     newBackButton.setBackButtonBackgroundImage(nil, for: .highlighted, barMetrics: .compact)
-//                    newBackButton.setTitleTextAttributes([String : AnyObject](), for: .normal)
-//                    newBackButton.setTitleTextAttributes([String : AnyObject](), for: .highlighted)
+                    //                    newBackButton.setTitleTextAttributes([String : AnyObject](), for: .normal)
+                    //                    newBackButton.setTitleTextAttributes([String : AnyObject](), for: .highlighted)
                     
                     previousViewControllerBackButton = previousViewController.navigationItem.backBarButtonItem // remember previous
                     previousViewController.navigationItem.backBarButtonItem = newBackButton
                 }
             }
         }
-
+        
         // Toolbar items
         var hasItems = false
         let fixedSpace = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: self, action: nil)
@@ -534,7 +584,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         } else {
             items.append(fixedSpace)
         }
-
+        
         // Middle - Nav
         if previousButton != nil && nextButton != nil && photos > 1 {
             hasItems = true
@@ -547,7 +597,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         } else {
             items.append(flexSpace)
         }
-
+        
         // Right - Action
         if actionButton != nil && !(!hasItems && nil == navigationItem.rightBarButtonItem) {
             items.append(actionButton!)
@@ -556,12 +606,12 @@ func floorcgf(x: CGFloat) -> CGFloat {
             if actionButton != nil {
                 // only show Action button on top right if this place is empty (no Done button there)
                 if nil == self.navigationItem.rightBarButtonItem {
-                	navigationItem.rightBarButtonItem = actionButton!
+                    navigationItem.rightBarButtonItem = actionButton!
                 }
             }
             items.append(fixedSpace)
         }
-
+        
         // Toolbar visibility
         toolbar.setItems(items, animated: false)
         var hideToolbar = true
@@ -587,7 +637,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         tilePages()
         performingLayout = false
     }
-
+    
     var presentingViewControllerPrefersStatusBarHidden: Bool {
         var presenting = presentingViewController
         if let p = presenting as? UINavigationController {
@@ -605,9 +655,9 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return false
     }
-
+    
     //MARK: - Appearance
-
+    
     /**
      viewWillAppear
      
@@ -636,7 +686,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             previousStatusBarStyle = UIApplication.shared.statusBarStyle
             UIApplication.shared.setStatusBarStyle(statusBarStyle, animated: animated)
         }
-
+        
         setNavBarAppearance(animated: animated)
         
         // Update UI
@@ -659,7 +709,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         self.view.setNeedsLayout()
     }
-
+    
     /**
      view Did Appear
      
@@ -680,7 +730,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         viewHasAppearedInitially = true
     }
-
+    
     /**
      view will disappear
      
@@ -693,7 +743,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         // Check that we're being popped for good
         if let viewControllers = navigationController?.viewControllers, viewControllers[0] !== self {
             var selfFound = false
-        
+            
             for vc in viewControllers {
                 if vc === self {
                     selfFound = true
@@ -720,11 +770,11 @@ func floorcgf(x: CGFloat) -> CGFloat {
         if !leaveStatusBarAlone && UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiom.phone {
             UIApplication.shared.setStatusBarStyle(previousStatusBarStyle, animated: animated)
         }
-
+        
         // Super
         super.viewWillDisappear(animated)
     }
-
+    
     /**
      will move toParentViewController
      
@@ -734,7 +784,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         if parent != nil && hasBelongedToViewController {
             fatalError("MediaBrowser Instance Reuse")
         }
-
+        
         if let navBar = navigationController?.navigationBar, didSavePreviousStateOfNavBar, parent == nil {
             navBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor:previousNavigationBarTextColor ?? UIColor.black]
             navBar.backgroundColor = previousNavigationBarBackgroundColor
@@ -754,13 +804,13 @@ func floorcgf(x: CGFloat) -> CGFloat {
         if nil == parent {
             hasBelongedToViewController = true
         }
-
+        
     }
-
+    
     //MARK: - Nav Bar Appearance
     func setNavBarAppearance(animated: Bool) {
         navigationController?.setNavigationBarHidden(false, animated: animated)
-    
+        
         if let navBar = navigationController?.navigationBar {
             navBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor:navigationBarTextColor]
             navBar.backgroundColor = navigationBarBackgroundColor
@@ -771,7 +821,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             navBar.barStyle = navigationBarStyle
         }
     }
-
+    
     func storePreviousNavBarAppearance() {
         didSavePreviousStateOfNavBar = true
         
@@ -784,7 +834,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             previousNavigationBarStyle = navi.navigationBar.barStyle
         }
     }
-
+    
     func restorePreviousNavBarAppearance(animated: Bool) {
         if let navi = navigationController, didSavePreviousStateOfNavBar {
             navi.setNavigationBarHidden(previousNavigationBarHidden, animated: animated)
@@ -796,7 +846,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             navBar.isTranslucent = previousNavigationBarTranslucent
             navBar.barTintColor = previousNavigationBarTintColor
             navBar.barStyle = previousNavigationBarStyle
-
+            
             // Restore back button if we need to
             if previousViewControllerBackButton != nil {
                 if let previousViewController = navi.topViewController { // We've disappeared so previous is falsew top
@@ -806,14 +856,14 @@ func floorcgf(x: CGFloat) -> CGFloat {
             }
         }
     }
-
+    
     //MARK: - Layout
     /// viewWillLayoutSubviews
     open override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
         layoutVisiblePages()
     }
-
+    
     func layoutVisiblePages() {
         // Flag
         performingLayout = true
@@ -874,18 +924,18 @@ func floorcgf(x: CGFloat) -> CGFloat {
         performingLayout = false
         
     }
-
+    
     //MARK: - Rotation
     /// supported interface orientations
     open override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return .all
     }
-
+    
     //MARK: - Data
     var currentIndex: Int {
         return currentPageIndex
     }
-
+    
     open func reloadData() {
         // Reset
         mediaCount = -1
@@ -902,7 +952,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             mediaArray.append(nil)
             thumbMedias.append(nil)
         }
-
+        
         // Update current page index
         if numberOfMedias > 0 {
             currentPageIndex = max(0, min(currentPageIndex, mediaNum - 1))
@@ -920,7 +970,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             view.setNeedsLayout()
         }
     }
-
+    
     var numberOfMedias: Int {
         if mediaCount == -1 {
             if let d = delegate {
@@ -935,10 +985,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
         if -1 == mediaCount {
             mediaCount = 0
         }
-
+        
         return mediaCount
     }
-
+    
     func mediaAtIndex(index: Int) -> Media? {
         var media: Media? = nil
         
@@ -964,7 +1014,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return media
     }
-
+    
     func thumbPhotoAtIndex(index: Int) -> Media? {
         var media: Media?
         
@@ -972,7 +1022,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             if nil == thumbMedias[index] {
                 if let d = delegate {
                     media = d.thumbnail(for: self, at: index)
-                
+                    
                     if let p = media {
                         thumbMedias[index] = p
                     }
@@ -984,7 +1034,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return media
     }
-
+    
     func captionViewForPhotoAtIndex(index: Int) -> MediaCaptionView? {
         var captionView: MediaCaptionView?
         
@@ -1004,7 +1054,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return captionView
     }
-
+    
     func photoIsSelectedAtIndex(index: Int) -> Bool {
         var value = false
         if displaySelectionButtons {
@@ -1015,7 +1065,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return value
     }
-
+    
     func setPhotoSelected(selected: Bool, atIndex index: Int) {
         if displaySelectionButtons {
             if let d = delegate {
@@ -1023,7 +1073,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             }
         }
     }
-
+    
     func image(for media: Media?) -> UIImage? {
         if let p = media {
             // Get image or obtain in background
@@ -1036,7 +1086,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return self.placeholderImage?.image
     }
-
+    
     func loadAdjacentPhotosIfNecessary(photo: Media) {
         let page = pageDisplayingPhoto(photo: photo)
         if let p = page {
@@ -1054,7 +1104,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
                         }
                     }
                 }
-
+                
                 if pageIndex < numberOfMedias - 1 {
                     // Preload index + 1
                     for i in 1...cachingImageCount {
@@ -1074,12 +1124,12 @@ func floorcgf(x: CGFloat) -> CGFloat {
         if let d = delegate {
             let media = d.media(for: self, at: currentPageIndex)
             media.loadUnderlyingImageAndNotify()
-
+            
         } else {
             fatalError("Set delegate first for pre-caching")
         }
     }
-
+    
     //MARK: - Media Loading falsetification
     @objc func handlePhotoLoadingDidEndNotification(notification: NSNotification) {
         if let photo = notification.object as? Media {
@@ -1097,16 +1147,16 @@ func floorcgf(x: CGFloat) -> CGFloat {
             }
         }
     }
-
+    
     //MARK: - Frame Calculations
-
+    
     var frameForPagingScrollView: CGRect {
         var frame = view.bounds// UIScreen.mainScreen().bounds
         frame.origin.x -= padding
         frame.size.width += (2.0 * padding)
         return frame.integral
     }
-
+    
     func frameForPageAtIndex(index: Int) -> CGRect {
         // We have to use our paging scroll view's bounds, falset frame, to calculate the page placement. When the device is in
         // landscape orientation, the frame will still be in portrait because the pagingScrollView is the root view controller's
@@ -1118,19 +1168,19 @@ func floorcgf(x: CGFloat) -> CGFloat {
         pageFrame.origin.x = (bounds.size.width * CGFloat(index)) + padding
         return pageFrame.integral
     }
-
+    
     func contentSizeForPagingScrollView() -> CGSize {
         // We have to use the paging scroll view's bounds to calculate the contentSize, for the same reason outlined above.
         let bounds = pagingScrollView.bounds
         return CGSize(width: bounds.size.width * CGFloat(numberOfMedias), height: bounds.size.height)
     }
-
+    
     func contentOffsetForPageAtIndex(index: Int) -> CGPoint {
         let pageWidth = pagingScrollView.bounds.size.width
         let newOffset = CGFloat(index) * pageWidth
         return CGPoint(x: newOffset, y: 0)
     }
-
+    
     var frameForToolbar: CGRect {
         var height: CGFloat = 44.0
         var safeAreaBottomInset: CGFloat = 0
@@ -1138,17 +1188,17 @@ func floorcgf(x: CGFloat) -> CGFloat {
         if #available(iOS 11, *) {
             safeAreaBottomInset = view.safeAreaInsets.bottom
         }
-
+        
         if view.bounds.height < 768.0 && view.bounds.height < view.bounds.width {
             height = 32.0
         }
-
+        
         let y = view.bounds.size.height - height - safeAreaBottomInset
         let width = view.bounds.size.width
-
+        
         return CGRect(x: 0.0, y: y, width: width, height: height).integral
     }
-
+    
     func frameForCaptionView(captionView: MediaCaptionView?, index: Int) -> CGRect {
         if let cw = captionView {
             let pageFrame = frameForPageAtIndex(index: index)
@@ -1170,7 +1220,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return CGRect.zero
     }
-
+    
     func frameForSelectedButton(selectedButton: UIButton, atIndex index: Int) -> CGRect {
         let pageFrame = frameForPageAtIndex(index: index)
         let padding: CGFloat = 20.0
@@ -1190,7 +1240,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         
         return selectedButtonFrame.integral
     }
-
+    
     func frameForPlayButton(playButton: UIButton, atIndex index: Int) -> CGRect {
         let pageFrame = frameForPageAtIndex(index: index)
         return CGRect(
@@ -1855,5 +1905,5 @@ func floorcgf(x: CGFloat) -> CGFloat {
 }
 
 extension MediaBrowser: UIActionSheetDelegate {
-
+    
 }

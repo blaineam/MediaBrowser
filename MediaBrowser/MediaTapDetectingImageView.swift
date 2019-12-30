@@ -8,8 +8,9 @@
 //
 
 import Foundation
+import SDWebImage
 
-class MediaTapDetectingImageView: UIImageView {
+class MediaTapDetectingImageView: SDAnimatedImageView {
     weak var tapDelegate: TapDetectingImageViewDelegate?
     
     override init(frame: CGRect) {

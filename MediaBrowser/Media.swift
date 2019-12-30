@@ -36,7 +36,7 @@ open class Media: NSObject {
 
     private let uuid = NSUUID().uuidString
     private var image: UIImage?
-    private var photoURL: URL?
+    public var photoURL: URL?
     private var asset: PHAsset?
     private var assetTargetSize = CGSize.zero
     
@@ -191,7 +191,8 @@ open class Media: NSObject {
 
     // Load from local file
     private func performLoadUnderlyingImageAndNotifyWithWebURL(url: URL) {
-        operation = SDWebImageManager.shared().loadImage(with: url, options: [], progress: { (receivedSize, expectedSize, targetURL) in
+        print(url);
+        operation = SDWebImageManager.shared.loadImage(with: url, options: [], progress: { (receivedSize, expectedSize, targetUrl) in
             let dict = [
             "progress" : min(1.0, CGFloat(receivedSize)/CGFloat(expectedSize)),
             "photo" : self
@@ -213,12 +214,27 @@ open class Media: NSObject {
             }
         }
     }
+
+    func isAnimatedImage(_ imageUrl: URL) -> Bool {
+        if let data = try? Data(contentsOf: imageUrl),
+            let source = CGImageSourceCreateWithData(data as CFData, nil) {
+            
+            let count = CGImageSourceGetCount(source)
+            return count > 1
+        }
+        return false
+    }
     
     // Load from local file
     private func performLoadUnderlyingImageAndNotifyWithLocalFileURL(url: URL) {
         DispatchQueue.global(qos: .default).async {
             let path = url.path
-            self.underlyingImage = UIImage(contentsOfFile: path)
+            if self.isAnimatedImage(url) {
+                self.underlyingImage = SDAnimatedImage(contentsOfFile: path)
+            } else {
+                self.underlyingImage = UIImage(contentsOfFile: path)
+            }
+
             DispatchQueue.main.async() {
                 self.imageLoadingComplete()
             }

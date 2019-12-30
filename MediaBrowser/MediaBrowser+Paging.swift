@@ -14,7 +14,7 @@ extension MediaBrowser {
      
      - Parameter index:  Int
      */
-    public func setCurrentIndex(at index: Int) {
+    public func setCurrentIndex(at index: Int, animated: Bool) {
         var internalIndex = index
         let mediaCount = self.numberOfMedias
         if mediaCount == 0 {
@@ -27,7 +27,7 @@ extension MediaBrowser {
         
         currentPageIndex = internalIndex
         if self.isViewLoaded {
-            self.jumpToPageAtIndex(index: internalIndex, animated: false)
+            self.jumpToPageAtIndex(index: internalIndex, animated: animated)
             if !viewIsActive {
                 self.tilePages() // Force tiling if view is not visible
             }

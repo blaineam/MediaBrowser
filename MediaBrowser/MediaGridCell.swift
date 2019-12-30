@@ -8,6 +8,7 @@
 
 import UIKit
 import UICircularProgressRing
+import SDWebImage
 
 class MediaGridCell: UICollectionViewCell {
     let videoIndicatorPadding = CGFloat(10.0)
@@ -15,7 +16,7 @@ class MediaGridCell: UICollectionViewCell {
     var index = 0
     var selectionMode = false
     
-    let imageView = UIImageView()
+    let imageView = SDAnimatedImageView()
     var placeholderImage: UIImage?
     let videoIndicator = UIImageView()
     var loadingError: UIImageView?

@@ -62,6 +62,14 @@ public protocol MediaBrowserDelegate: NSObject {
     func didDisplayMedia(at index: Int, in mediaBrowser: MediaBrowser)
     
     /**
+     Optional protocol when need callback
+     
+     - Parameter index: Int
+     - Parameter mediaBrowser: MediaBrowser
+     */
+    func didFinishDisplayingMedia(at index: Int, in mediaBrowser: MediaBrowser)
+    
+    /**
      Optional protocol when need callback about action button
      
      - Parameter photoIndex: Int
@@ -116,6 +124,8 @@ public extension MediaBrowserDelegate {
     func captionView(for mediaBrowser: MediaBrowser, at index: Int) -> MediaCaptionView? { return nil }
     
     func didDisplayMedia(at index: Int, in mediaBrowser: MediaBrowser) { }
+    
+    func didFinishDisplayingMedia(at index: Int, in mediaBrowser: MediaBrowser) { }
     
     func actionButtonPressed(at photoIndex: Int, in mediaBrowser: MediaBrowser, sender: Any? = nil) { mediaBrowser.defaultActionForMedia(atIndex: photoIndex) }
     

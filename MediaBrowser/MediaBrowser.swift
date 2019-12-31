@@ -217,9 +217,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
     /// Caching image count both side (e.g. when index 1, caching 0 and 2)
     public var cachingImageCount = 1
     
+    public var viewIsBack: Bool = false;
+    
     
     public func toggleActionButton(direction:Bool) -> Void {
-        
         
         DispatchQueue.main.async {
             if(direction) {
@@ -232,6 +233,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
                     barButtonSystemItem: UIBarButtonItem.SystemItem.pause,
                     target: self,
                     action: #selector(self.actionButtonPressed(_:)))
+//                //play current video first
+//                if self.viewHasAppearedInitially &&  self.mediaAtIndex(index: self.currentPageIndex)?.isVideo ?? false {
+//                    self.playVideoAtIndex(index: self.currentPageIndex);
+//                }
             }
             
             // Toolbar items
@@ -729,6 +734,11 @@ func floorcgf(x: CGFloat) -> CGFloat {
         }
         
         viewHasAppearedInitially = true
+        viewIsBack = true;
+    }
+    
+    open override func viewDidDisappear(_ animated: Bool) {
+        viewIsBack = false;
     }
     
     /**
@@ -737,6 +747,9 @@ func floorcgf(x: CGFloat) -> CGFloat {
      - Parameter animated: Bool
      */
     open override func viewWillDisappear(_ animated: Bool) {
+        
+        
+        viewIsBack = false;
         // Detect if rotation occurs while we're presenting a modal
         pageIndexBeforeRotation = currentPageIndex
         
@@ -1297,11 +1310,11 @@ func floorcgf(x: CGFloat) -> CGFloat {
             next.isEnabled = (currentPageIndex < medias - 1)
         }
         
-        // Disable action button if there is false image or it's a video
+        // Disable action button if there is false image
         if let ab = actionButton {
             let photo = mediaAtIndex(index: currentPageIndex)
             
-            if photo != nil && (photo!.underlyingImage == nil || photo!.isVideo) {
+            if photo != nil && (photo!.underlyingImage == nil) {
                 ab.isEnabled = false
                 ab.tintColor = UIColor.clear // Tint to hide button
             } else {
@@ -1310,13 +1323,13 @@ func floorcgf(x: CGFloat) -> CGFloat {
             }
         }
     }
-    
     func jumpToPageAtIndex(index: Int, animated: Bool) {
         // Change page
         if index < numberOfMedias {
             let pageFrame = frameForPageAtIndex(index: index)
             pagingScrollView.setContentOffset(CGPoint(x: pageFrame.origin.x - padding, y: 0), animated: animated)
             updateNavigation()
+            
         }
         
         // Update timer to give more time
@@ -1376,7 +1389,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
     
     //MARK: - Video
     
-    func playVideoAtIndex(index: Int) {
+    public func playVideoAtIndex(index: Int) {
         let photo = mediaAtIndex(index: index)
         
         // Valid for playing
@@ -1462,13 +1475,17 @@ func floorcgf(x: CGFloat) -> CGFloat {
     
     @objc func videoFinishedCallback(notification: NSNotification) {
         if let player = currentVideoPlayerViewController.player {
+
+            if let d = delegate {
+                print("running delegate videoFinishedCallback")
+                d.didFinishDisplayingMedia(at: currentPageIndex, in: self)
+            }
             // Remove observer
             NotificationCenter.default.removeObserver(
                 self,
                 name:NSNotification.Name.AVPlayerItemDidPlayToEndTime,
                 object: player.currentItem
             )
-            
             // Clear up
             clearCurrentVideo()
             

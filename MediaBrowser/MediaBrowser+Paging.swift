@@ -123,6 +123,8 @@ extension MediaBrowser {
                     page.captionView = captionView
                 }
                 
+                
+                
                 // Add play button if needed
                 if page.displayingVideo() {
                     let playButton = UIButton(type: .custom)

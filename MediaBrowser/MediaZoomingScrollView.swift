@@ -160,6 +160,8 @@ class MediaZoomingScrollView: UIScrollView, UIScrollViewDelegate, TapDetectingIm
                 photoImageView.image = img
                 photoImageView.isHidden = false
                 
+                photoImageView.startAnimating();
+                
                 // Setup photo frame
                 let photoImageViewFrame = CGRect(origin: CGPoint.zero, size: img.size)
                 photoImageView.frame = photoImageViewFrame

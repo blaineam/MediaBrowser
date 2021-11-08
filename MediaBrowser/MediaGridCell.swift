@@ -16,7 +16,7 @@ class MediaGridCell: UICollectionViewCell {
     var index = 0
     var selectionMode = false
     
-    let imageView = SDAnimatedImageView()
+    let imageView = UIImageView()
     var placeholderImage: UIImage?
     let videoIndicator = UIImageView()
     var loadingError: UIImageView?
@@ -164,6 +164,7 @@ class MediaGridCell: UICollectionViewCell {
     override func prepareForReuse() {
         photo = nil
         mwGridController = nil
+        imageView.stopAnimating();
         imageView.image = self.placeholderImage
         loadingIndicator.startProgress(to: 0.0, duration: 1)
         selectedButton.isHidden = true
@@ -200,12 +201,13 @@ class MediaGridCell: UICollectionViewCell {
     
     func displayImage() {
         if let p = Media {
-            if let image = p.underlyingImage {
+            if let image = p.underlyingImage{
                 imageView.image = image
             } else {
                 imageView.image = self.placeholderImage
             }
             selectedButton.isHidden = !selectionMode
+                imageView.stopAnimating();
             self.hideImageFailure()
         }
     }

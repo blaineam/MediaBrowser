@@ -60,6 +60,8 @@ func floorcgf(x: CGFloat) -> CGFloat {
     internal var previousViewControllerBackButton: UIBarButtonItem?
     internal var previousStatusBarStyle: UIStatusBarStyle = .lightContent
     
+    internal var controlsTap: UIButton?
+    
     // Video
     lazy internal var currentVideoPlayerViewController: AVPlayerViewController = {
         if #available(iOS 9.0, *) {
@@ -1411,8 +1413,42 @@ func floorcgf(x: CGFloat) -> CGFloat {
         }
     }
     
+    func showVideoControls(sender: UIButton!) {
+        print("showVideoControlls pressed");
+        // toggle the player controls on if they were set to off
+        if !currentVideoPlayerViewController.showsPlaybackControls {
+            currentVideoPlayerViewController.showsPlaybackControls = true;
+            sender.removeFromSuperview()
+            //self.togglePlaybackControlsView(currentVideoPlayerViewController.view, isHidden: false);
+        }
+    }
+    
     func playVideo(videoURL: URL, atPhotoIndex index: Int) {
         // Setup player
+        
+        currentVideoPlayerViewController.showsPlaybackControls = false;
+        guard let overlayView = currentVideoPlayerViewController.contentOverlayView
+        else { return }
+        controlsTap?.removeFromSuperview()
+        let theButton = UIButton(frame: self.view.frame)
+        theButton.setTitle("", for: .normal)
+        theButton.backgroundColor = .clear
+        theButton.translatesAutoresizingMaskIntoConstraints = false
+        if #available(iOS 9.0, *) {
+            theButton.widthAnchor.constraint(equalToConstant: UIScreen.main.bounds.width).isActive = true
+        } else {
+            // Fallback on earlier versions
+        }
+        if #available(iOS 9.0, *) {
+            theButton.heightAnchor.constraint(equalToConstant: UIScreen.main.bounds.height).isActive = true
+        } else {
+            // Fallback on earlier versions
+        }
+        theButton.isUserInteractionEnabled = true
+        theButton.addTarget(self, action: #selector(self.showVideoControls(sender:)), for: .touchDown)
+        overlayView.addSubview(theButton)
+        overlayView.bringSubviewToFront(theButton)
+        controlsTap = theButton
         
         if let accessToken = delegate?.accessToken(for: videoURL) {
             let headerFields: [String: String] = ["Authorization": accessToken]
@@ -1468,6 +1504,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
             
             // Show
             present(currentVideoPlayerViewController, animated: true, completion: {
+                
                 player.play()
             })
         }

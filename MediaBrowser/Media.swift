@@ -200,12 +200,16 @@ open class Media: NSObject {
             
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: MEDIA_PROGRESS_NOTIFICATION), object: dict)
             
-        }) { [weak self] (image, _, error, cacheType, finish, imageUrl) in
+        }) { [weak self] (image, data, error, cacheType, finish, imageUrl) in
             guard let wself = self else { return }
             
             DispatchQueue.main.async {
                 if let _image = image {
-                    wself.underlyingImage = _image
+                    if _image.sd_isAnimated, let _data = data {
+                        wself.underlyingImage = SDAnimatedImage(data: _data);
+                    } else {
+                        wself.underlyingImage = _image
+                    }
                 }
                 
                 DispatchQueue.main.async() {

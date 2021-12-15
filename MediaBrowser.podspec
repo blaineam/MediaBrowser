@@ -32,6 +32,7 @@ MediaBrowser can display one or more images or videos by providing either UIImag
   s.resources        = "MediaBrowser/*.xcassets"
 
   s.ios.deployment_target = '12.0'
+  s.tvos.deployment_target = '12.0'
 
   s.frameworks = 'ImageIO', 'QuartzCore', 'AssetsLibrary', 'MediaPlayer'
   s.weak_frameworks = 'Photos'

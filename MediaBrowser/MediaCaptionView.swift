@@ -12,7 +12,7 @@ import UIKit
 /// MediaCaptionView is based in UIToolbar
 public class MediaCaptionView: UIToolbar {
     private var media: Media?
-    private var label = UILabel()
+    private var label = UITextView()
     
     /// labelPadding
     public let labelPadding = CGFloat(10.0)
@@ -45,10 +45,7 @@ public class MediaCaptionView: UIToolbar {
      - Parameter size: CGSize
      */
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
-        var maxHeight = CGFloat(9999.0)
-        if label.numberOfLines > 0 {
-            maxHeight = label.font.leading * CGFloat(label.numberOfLines)
-        }
+        var maxHeight = CGFloat((UIScreen().currentMode?.size.height ?? 800) * 0.25);
         
         let textSize: CGSize
         
@@ -79,17 +76,17 @@ public class MediaCaptionView: UIToolbar {
         autoresizingMask =
             [.flexibleWidth, .flexibleTopMargin, .flexibleLeftMargin, .flexibleRightMargin]
         
-        label = UILabel(frame: CGRect(x: labelPadding, y: 0.0, width: self.bounds.size.width - labelPadding * 2.0, height: self.bounds.size.height))
+        label = UITextView(frame: CGRect(x: labelPadding, y: 0.0, width: self.bounds.size.width - labelPadding * 2.0, height: self.bounds.size.height))
             
         label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         label.isOpaque = false
         label.backgroundColor = UIColor.clear
-        label.textAlignment = NSTextAlignment.center
-        label.lineBreakMode = .byWordWrapping
-        label.minimumScaleFactor = 0.6
-        label.adjustsFontSizeToFitWidth = true
-
-        label.numberOfLines = 0
+        label.textAlignment = NSTextAlignment.left
+//        label.lineBreakMode = .byWordWrapping
+//        label.minimumScaleFactor = 0.6
+//        label.adjustsFontSizeToFitWidth = true
+//
+//        label.numberOfLines = 0
         label.textColor = UIColor.white
         label.font = UIFont.systemFont(ofSize: 17.0)
         
@@ -97,6 +94,12 @@ public class MediaCaptionView: UIToolbar {
             label.text = p.caption
         }
         
+        label.showsVerticalScrollIndicator = true
+        label.isEditable = false
+        label.isScrollEnabled = true
+        label.scrollRangeToVisible(NSMakeRange(0, 0))
+        label.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        self.isUserInteractionEnabled = true;
         self.addSubview(label)
     }
 }

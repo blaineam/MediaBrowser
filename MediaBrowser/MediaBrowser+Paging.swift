@@ -116,12 +116,6 @@ extension MediaBrowser {
                 
                 pagingScrollView.addSubview(page)
                 
-                // Add caption
-                if let captionView = captionViewForPhotoAtIndex(index: index) {
-                    captionView.frame = frameForCaptionView(captionView: captionView, index: index)
-                    pagingScrollView.addSubview(captionView)
-                    page.captionView = captionView
-                }
                 
                 
                 
@@ -135,6 +129,13 @@ extension MediaBrowser {
                     playButton.frame = frameForPlayButton(playButton: playButton, atIndex: index)
                     pagingScrollView.addSubview(playButton)
                     page.playButton = playButton
+                }
+                
+                // Add caption
+                if let captionView = captionViewForPhotoAtIndex(index: index) {
+                    captionView.frame = frameForCaptionView(captionView: captionView, index: index)
+                    pagingScrollView.addSubview(captionView)
+                    page.captionView = captionView
                 }
                 
                 // Add selected button
@@ -247,9 +248,9 @@ extension MediaBrowser {
         }
         
         // Handle video on page change
-        if !rotating || index != currentVideoIndex {
-            clearCurrentVideo()
-        }
+        // if !rotating || index != currentVideoIndex {
+            // clearCurrentVideo()
+        // }
         
         // Release images further away than +/-1
         if index > 0 {

@@ -63,12 +63,12 @@ func floorcgf(x: CGFloat) -> CGFloat {
     internal var controlsTap: UIButton?
     
     // Video
-    lazy internal var currentVideoPlayerViewController: AVPlayerViewController = {
+    lazy internal var currentVideoPlayerViewController: MediaBrowserAVPlayerViewController = {
         if #available(iOS 9.0, *) {
             $0.delegate = self
         }
         return $0
-    }(AVPlayerViewController())
+    }(MediaBrowserAVPlayerViewController())
     internal var currentVideoIndex = 0
     internal var currentVideoLoadingIndicator: UIActivityIndicatorView?
     
@@ -78,7 +78,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
     public var scrollViewBackgroundColor = UIColor.black
     
     /// UINavigationBar Translucent for MediaBrowser
-    public var navigationBarTranslucent = true
+    public var navigationBarTranslucent = false
     
     /// UINavigationBar Text Color for MediaBrowser
     public var navigationBarTextColor = UIColor.white
@@ -351,7 +351,6 @@ func floorcgf(x: CGFloat) -> CGFloat {
     }
     
     deinit {
-        clearCurrentVideo()
         pagingScrollView.delegate = nil
         NotificationCenter.default.removeObserver(self)
         releaseAllUnderlyingPhotos(preserveCurrent: false)
@@ -431,7 +430,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
         toolbar.barTintColor = toolbarBarTintColor
         toolbar.backgroundColor = toolbarBackgroundColor
         toolbar.alpha = toolbarAlpha
-        toolbar.barStyle = .blackTranslucent
+        toolbar.barStyle = .black
         toolbar.isTranslucent = true
         toolbar.autoresizingMask = [.flexibleTopMargin, .flexibleWidth]
         
@@ -1166,7 +1165,24 @@ func floorcgf(x: CGFloat) -> CGFloat {
     //MARK: - Frame Calculations
     
     var frameForPagingScrollView: CGRect {
-        var frame = view.bounds// UIScreen.mainScreen().bounds
+        
+        var frame = view.bounds
+        
+        if areControlsHidden {
+            if let safeInsets =  UIApplication.shared.windows.first?.safeAreaInsets {
+                frame.origin.y -= safeInsets.top;
+                frame.size.height += safeInsets.top;
+            }
+        }
+//            if let navbarHeight = self.navigationController?.navigationBar.frame.size.height {
+//                frame.size.height -= navbarHeight
+//            }
+//
+//            frame.size.height -= self.toolbar.frame.size.height
+        //}
+        
+        
+        print("DEBBUGGEY: \(frame.origin.y) : \(frame.size.height)")
         frame.origin.x -= padding
         frame.size.width += (2.0 * padding)
         return frame.integral
@@ -1383,9 +1399,9 @@ func floorcgf(x: CGFloat) -> CGFloat {
         }
         
         if index != Int.max {
-            if nil == currentVideoPlayerViewController.player {
-                playVideoAtIndex(index: index)
-            }
+            //if nil == currentVideoPlayerViewController.player {
+            playVideoAtIndex(index: index)
+            //}
         }
     }
     
@@ -1413,43 +1429,10 @@ func floorcgf(x: CGFloat) -> CGFloat {
         }
     }
     
-    func showVideoControls(sender: UIButton!) {
-        print("showVideoControlls pressed");
-        // toggle the player controls on if they were set to off
-        if !currentVideoPlayerViewController.showsPlaybackControls {
-            currentVideoPlayerViewController.showsPlaybackControls = true;
-            sender.removeFromSuperview()
-            //self.togglePlaybackControlsView(currentVideoPlayerViewController.view, isHidden: false);
-        }
-    }
-    
     func playVideo(videoURL: URL, atPhotoIndex index: Int) {
         // Setup player
         
         currentVideoPlayerViewController.showsPlaybackControls = false;
-        guard let overlayView = currentVideoPlayerViewController.contentOverlayView
-        else { return }
-        controlsTap?.removeFromSuperview()
-        let theButton = UIButton(frame: self.view.frame)
-        theButton.setTitle("", for: .normal)
-        theButton.backgroundColor = .clear
-        theButton.translatesAutoresizingMaskIntoConstraints = false
-        if #available(iOS 9.0, *) {
-            theButton.widthAnchor.constraint(equalToConstant: UIScreen.main.bounds.width).isActive = true
-        } else {
-            // Fallback on earlier versions
-        }
-        if #available(iOS 9.0, *) {
-            theButton.heightAnchor.constraint(equalToConstant: UIScreen.main.bounds.height).isActive = true
-        } else {
-            // Fallback on earlier versions
-        }
-        theButton.isUserInteractionEnabled = true
-        theButton.addTarget(self, action: #selector(self.showVideoControls(sender:)), for: .touchDown)
-        overlayView.addSubview(theButton)
-        overlayView.bringSubviewToFront(theButton)
-        controlsTap = theButton
-        
         if let accessToken = delegate?.accessToken(for: videoURL) {
             let headerFields: [String: String] = ["Authorization": accessToken]
             let urlAsset = AVURLAsset(url: videoURL, options: ["AVURLAssetHTTPHeaderFieldsKey": headerFields])
@@ -1489,28 +1472,17 @@ func floorcgf(x: CGFloat) -> CGFloat {
                 object: player.currentItem
             )
             
-            // Remove the movie player view controller from the "playback did finish" falsetification observers
-            // Observe ourselves so we can get it to use the crossfade transition
-            //            NotificationCenter.default.removeObserver(
-            //                player,
-            //                name: NSNotification.Name.MPMoviePlayerPlaybackDidFinish,
-            //                object: player.moviePlayer)
-            //
-            //            NotificationCenter.default.addObserver(
-            //                self,
-            //                selector: #selector(videoFinishedCallback),
-            //                name: NSNotification.Name.MPMoviePlayerPlaybackDidFinish,
-            //                object: player.moviePlayer)
-            
             // Show
             present(currentVideoPlayerViewController, animated: true, completion: {
-                
+                print("DEBBUGGEY: presented the video player")
                 player.play()
             })
         }
     }
     
     @objc func videoFinishedCallback(notification: NSNotification) {
+        
+            print("DEBBUGGEY: video player finished playing")
         if let player = currentVideoPlayerViewController.player {
 
             if let d = delegate {
@@ -1524,7 +1496,6 @@ func floorcgf(x: CGFloat) -> CGFloat {
                 object: player.currentItem
             )
             // Clear up
-            clearCurrentVideo()
             
             // Dismiss
             //            if let errorObj = notification.userInfo?[MPMoviePlayerPlaybackDidFinishReasonUserInfoKey] {
@@ -1547,6 +1518,8 @@ func floorcgf(x: CGFloat) -> CGFloat {
     }
     
     func clearCurrentVideo() {
+        
+            print("DEBBUGGEY: clearing the video player")
         if let player = currentVideoPlayerViewController.player {
             player.replaceCurrentItem(with: nil)
             currentVideoPlayerViewController.dismiss(animated: true, completion: nil)

@@ -45,7 +45,7 @@ public class MediaCaptionView: UIToolbar {
      - Parameter size: CGSize
      */
     public override func sizeThatFits(_ size: CGSize) -> CGSize {
-        var maxHeight = CGFloat((UIScreen().currentMode?.size.height ?? 800) * 0.25);
+        let maxHeight = CGFloat((UIScreen().currentMode?.size.height ?? 800) * 0.25);
         
         let textSize: CGSize
         
@@ -57,6 +57,13 @@ public class MediaCaptionView: UIToolbar {
                 context: nil).size
         } else {
             textSize = CGSize(width: 0, height: 0)
+        }
+        
+        let safeInsets =  UIApplication.shared.windows.first?.safeAreaInsets ?? UIEdgeInsets(top: 15, left: 15, bottom: 15, right: 15)
+        if UIDevice.current.orientation.isLandscape {
+            label.textContainerInset = safeInsets
+        } else {
+            label.textContainerInset = UIEdgeInsets(top: 15, left: 15, bottom: 15, right: 15)
         }
         
         return CGSize(width: size.width, height: textSize.height + labelPadding * 2.0)
@@ -99,6 +106,7 @@ public class MediaCaptionView: UIToolbar {
         label.isScrollEnabled = true
         label.scrollRangeToVisible(NSMakeRange(0, 0))
         label.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        label.textContainerInset = UIApplication.shared.windows.first?.safeAreaInsets ?? UIEdgeInsets(top: 15, left: 15, bottom: 15, right: 15)
         self.isUserInteractionEnabled = true;
         self.addSubview(label)
     }

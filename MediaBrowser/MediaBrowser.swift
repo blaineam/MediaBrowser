@@ -1113,7 +1113,6 @@ func floorcgf(x: CGFloat) -> CGFloat {
                         if let media = mediaAtIndex(index: pageIndex - i) {
                             if nil == media.underlyingImage {
                                 media.loadUnderlyingImageAndNotify()
-                                print("Pre-loading image at index \(pageIndex - i)")
                             }
                         }
                     }
@@ -1125,7 +1124,6 @@ func floorcgf(x: CGFloat) -> CGFloat {
                         if let media = mediaAtIndex(index: pageIndex + i) {
                             if nil == media.underlyingImage {
                                 media.loadUnderlyingImageAndNotify()
-                                print("Pre-loading image at index \(pageIndex + i)")
                             }
                         }
                     }
@@ -1169,20 +1167,12 @@ func floorcgf(x: CGFloat) -> CGFloat {
         var frame = view.bounds
         
         if areControlsHidden {
-            if let safeInsets =  UIApplication.shared.windows.first?.safeAreaInsets {
-                frame.origin.y -= safeInsets.top;
-                frame.size.height += safeInsets.top;
+            if let navi = self.navigationController?.navigationBar.frame {
+                frame.origin.y -= navi.origin.y + navi.size.height;
+                frame.size.height += navi.origin.y + navi.size.height;
             }
         }
-//            if let navbarHeight = self.navigationController?.navigationBar.frame.size.height {
-//                frame.size.height -= navbarHeight
-//            }
-//
-//            frame.size.height -= self.toolbar.frame.size.height
-        //}
-        
-        
-        print("DEBBUGGEY: \(frame.origin.y) : \(frame.size.height)")
+    
         frame.origin.x -= padding
         frame.size.width += (2.0 * padding)
         return frame.integral
@@ -1456,7 +1446,6 @@ func floorcgf(x: CGFloat) -> CGFloat {
                 }
                 try AVAudioSession.sharedInstance().setActive(true)
             } catch let error as NSError {
-                print(error)
             }
             
             NotificationCenter.default.removeObserver(
@@ -1474,19 +1463,15 @@ func floorcgf(x: CGFloat) -> CGFloat {
             
             // Show
             present(currentVideoPlayerViewController, animated: true, completion: {
-                print("DEBBUGGEY: presented the video player")
                 player.play()
             })
         }
     }
     
     @objc func videoFinishedCallback(notification: NSNotification) {
-        
-            print("DEBBUGGEY: video player finished playing")
         if let player = currentVideoPlayerViewController.player {
 
             if let d = delegate {
-                print("running delegate videoFinishedCallback")
                 d.didFinishDisplayingMedia(at: currentPageIndex, in: self)
             }
             // Remove observer
@@ -1518,8 +1503,6 @@ func floorcgf(x: CGFloat) -> CGFloat {
     }
     
     func clearCurrentVideo() {
-        
-            print("DEBBUGGEY: clearing the video player")
         if let player = currentVideoPlayerViewController.player {
             player.replaceCurrentItem(with: nil)
             currentVideoPlayerViewController.dismiss(animated: true, completion: nil)
@@ -1707,17 +1690,21 @@ func floorcgf(x: CGFloat) -> CGFloat {
             } else {
                 // View controller based so animate away
                 statusBarShouldBeHidden = hidden
-                UIView.animate(
-                    withDuration: hidden ? 0.1 : animationDuration,
-                    animations: {
-                        self.setNeedsStatusBarAppearanceUpdate()
-                })
+                if animated {
+                    UIView.animate(
+                        withDuration: hidden ? 0.1 : animationDuration,
+                        animations: {
+                            self.setNeedsStatusBarAppearanceUpdate()
+                    })
+                } else {
+                    self.setNeedsStatusBarAppearanceUpdate()
+                }
             }
         }
         
         // Navigation bar
         if viewIsActive, hidden {
-            self.navigationController?.setNavigationBarHidden(hidden, animated: true)
+            self.navigationController?.setNavigationBarHidden(hidden, animated: animated)
         }
         
         // Toolbar, nav bar and captions
@@ -1737,8 +1724,44 @@ func floorcgf(x: CGFloat) -> CGFloat {
             }
         }
         
-        UIView.animate(withDuration: animationDuration, animations: {
-            
+        if animated {
+            UIView.animate(withDuration: animationDuration, animations: {
+                
+                // Toolbar
+                self.toolbar.frame = self.frameForToolbar
+                
+                if hidden {
+                    self.toolbar.frame = self.toolbar.frame.offsetBy(dx: 0, dy: animatonOffset)
+                }
+                self.toolbar.alpha = hidden ? 0.0 : self.toolbarAlpha
+                
+                // Captions
+                for page in self.visiblePages {
+                    if let v = page.captionView {
+                        // Pass any index, all we're interested in is the Y
+                        var captionFrame = self.frameForCaptionView(captionView: v, index: 0)
+                        captionFrame.origin.x = v.frame.origin.x // Reset X
+                        
+                        if hidden {
+                            captionFrame = captionFrame.offsetBy(dx: 0, dy: animatonOffset)
+                        }
+                        
+                        v.frame = captionFrame
+                        v.alpha = hidden ? 0.0 : self.captionAlpha
+                    }
+                }
+                
+                // Selected buttons
+                for page in self.visiblePages {
+                    if let button = page.selectedButton {
+                        let v = button
+                        var newFrame = self.frameForSelectedButton(selectedButton: v, atIndex: 0)
+                        newFrame.origin.x = v.frame.origin.x
+                        v.frame = newFrame
+                    }
+                }
+            })
+        } else {
             // Toolbar
             self.toolbar.frame = self.frameForToolbar
             
@@ -1772,7 +1795,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
                     v.frame = newFrame
                 }
             }
-        })
+        }
         
         // Controls
         if !permanent {
@@ -1833,7 +1856,9 @@ func floorcgf(x: CGFloat) -> CGFloat {
     }
     
     @objc func toggleControls() {
-        setControlsHidden(hidden: !areControlsHidden, animated: true, permanent: false)
+        UIView.performWithoutAnimation {
+            setControlsHidden(hidden: !areControlsHidden, animated: false, permanent: false)
+        }
     }
     
     //MARK: - Properties

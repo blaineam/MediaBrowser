@@ -456,10 +456,10 @@ class MediaZoomingScrollView: UIScrollView, UIScrollViewDelegate, TapDetectingIm
         // Translate touch location to image view location
         var touchX = touch.location(in: view).x
         var touchY = touch.location(in: view).y
-        touchX *= 1.0 / self.zoomScale
-        touchY *= 1.0 / self.zoomScale
-        touchX += self.contentOffset.x
-        touchY += self.contentOffset.y
+        //touchX *= 1.0 / self.zoomScale
+//        touchY *= 1.0 / self.zoomScale
+//        touchX += self.contentOffset.x
+//        touchY += self.contentOffset.y
         
         handleSingleTap(touchPoint: CGPoint(x: touchX, y: touchY))
     }

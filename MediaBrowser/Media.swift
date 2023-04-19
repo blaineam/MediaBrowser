@@ -191,7 +191,6 @@ open class Media: NSObject {
 
     // Load from local file
     private func performLoadUnderlyingImageAndNotifyWithWebURL(url: URL) {
-        print(url);
         operation = SDWebImageManager.shared.loadImage(with: url, options: [], progress: { (receivedSize, expectedSize, targetUrl) in
             let dict = [
             "progress" : min(1.0, CGFloat(receivedSize)/CGFloat(expectedSize)),

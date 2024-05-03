@@ -112,6 +112,11 @@ public protocol MediaBrowserDelegate: NSObject {
      Optional protocol for access token
      */
     func accessToken(for url: URL?) -> String?
+    
+    /**
+        Optional protocol for keypresses.
+     */
+    func onKeyPressed(_ key: UIKey)
 }
 
 public extension MediaBrowserDelegate {
@@ -138,4 +143,6 @@ public extension MediaBrowserDelegate {
     func gridCellSize(width: CGFloat) -> CGSize { return CGSize(width: 128, height: 128) }
 
     func accessToken(for _: URL?) -> String? { return nil }
+    
+    func onKeyPressed(_ key: UIKey) {}
 }

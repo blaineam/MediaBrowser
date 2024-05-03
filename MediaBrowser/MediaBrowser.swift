@@ -27,7 +27,7 @@ func floorcgf(x: CGFloat) -> CGFloat {
     var fixedMediasArray: [Media]?
 
     // Views
-    var pagingScrollView = UIScrollView()
+    public var pagingScrollView = UIScrollView()
 
     // Paging & layout
     var visiblePages = Set<MediaZoomingScrollView>()
@@ -421,6 +421,9 @@ func floorcgf(x: CGFloat) -> CGFloat {
         pagingScrollView.backgroundColor = scrollViewBackgroundColor
         pagingScrollView.contentSize = contentSizeForPagingScrollView()
         pagingScrollView.contentInsetAdjustmentBehavior = .never
+        if #available(iOS 17.0, *) {
+            pagingScrollView.allowsKeyboardScrolling = false
+        }
         view.addSubview(pagingScrollView)
 
         // Toolbar
@@ -1074,6 +1077,35 @@ func floorcgf(x: CGFloat) -> CGFloat {
                 d.mediaDid(selected: selected, at: index, in: self)
             }
         }
+    }
+    
+    public override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        guard let key = presses.first?.key else { return }
+        switch key.keyCode {
+        case .keyboardSpacebar,
+                .keyboardA,
+                .keyboardS,
+                .keyboardRightArrow,
+                .keyboardN,
+                .keyboardLeftArrow,
+                .keyboardB,
+                .keyboardC,
+                .keyboardF,
+                .keyboardL,
+                .keyboard3 where key.modifierFlags.contains(.command), .keypad3 where key.modifierFlags.contains(.command),
+                .keyboard5 where key.modifierFlags.contains(.command), .keypad5 where key.modifierFlags.contains(.command),
+                .keyboard7 where key.modifierFlags.contains(.command), .keypad7 where key.modifierFlags.contains(.command),
+                .keyboard8 where key.modifierFlags.contains(.command), .keypad8 where key.modifierFlags.contains(.command),
+                .keyboard9 where key.modifierFlags.contains(.command), .keypad9 where key.modifierFlags.contains(.command)
+            :
+                print("pressed key: \(key.characters)")
+                if let d = delegate {
+                    d.onKeyPressed(key)
+                }
+                return
+            default:
+                super.pressesEnded(presses, with: event)
+            }
     }
 
     func image(for media: Media?) -> UIImage? {
@@ -1836,15 +1868,15 @@ func floorcgf(x: CGFloat) -> CGFloat {
         return toolbar.alpha == 0.0
     }
 
-    func hideControls() {
+    public func hideControls() {
         setControlsHidden(hidden: true, animated: true, permanent: false)
     }
 
-    func showControls() {
+    public func showControls() {
         setControlsHidden(hidden: false, animated: true, permanent: false)
     }
 
-    func toggleControls() {
+    public func toggleControls() {
         UIView.performWithoutAnimation {
             setControlsHidden(hidden: !areControlsHidden, animated: false, permanent: false)
         }

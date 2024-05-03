@@ -98,7 +98,6 @@ class MediaGridViewController: UICollectionViewController, UICollectionViewDeleg
                 cv.reloadData()
             }
         }
-
         super.viewWillTransition(to: size, with: coordinator)
     }
 
@@ -147,9 +146,9 @@ class MediaGridViewController: UICollectionViewController, UICollectionViewDeleg
             gcp.cancelAnyLoading()
         }
     }
-
+    
     func collectionView(_: UICollectionView, layout _: UICollectionViewLayout, sizeForItemAt _: IndexPath) -> CGSize {
-        if let delegateSize = browser?.delegate?.gridCellSize() {
+        if let delegateSize = browser?.delegate?.gridCellSize(width: view.frame.width) {
             return delegateSize
         }
 

@@ -106,7 +106,7 @@ public protocol MediaBrowserDelegate: NSObject {
      Optional protocol for grid cells resizing
      - Returns: Optional CGSize
      */
-    func gridCellSize() -> CGSize
+    func gridCellSize(width: CGFloat) -> CGSize
 
     /**
      Optional protocol for access token
@@ -135,7 +135,7 @@ public extension MediaBrowserDelegate {
 
     func title(for _: MediaBrowser, at _: Int) -> String? { return nil }
 
-    func gridCellSize() -> CGSize { return CGSize(width: 128, height: 128) }
+    func gridCellSize(width: CGFloat) -> CGSize { return CGSize(width: 128, height: 128) }
 
     func accessToken(for _: URL?) -> String? { return nil }
 }
